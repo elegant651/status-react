@@ -81,6 +81,9 @@ update-lein-nix: SHELL := /bin/sh
 update-lein-nix: ##@nix Update maven nix expressions based on current lein setup
 	nix/tools/lein/generate-nix.sh nix/lein
 
+update-gems-nix: ##@nix Update Ruby gems in fastlane/Gemfile.lock and fastlane/gemset.nix
+	fastlane/update.sh
+
 disable-githooks: SHELL := /bin/sh
 disable-githooks:
 	@rm -f ${env.WORKSPACE}/.git/hooks/pre-commit && \
