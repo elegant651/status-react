@@ -76,6 +76,8 @@
           :ref                 #(reset! password-text-input %)
           :auto-focus          (= view-id :login)
           :accessibility-label :password-input
+          :on-focus #(when @password-text-input
+                       (.clear @password-text-input))
           :on-submit-editing   (when sign-in-enabled?
                                  #(login-multiaccount @password-text-input))
           :on-change-text      #(do
