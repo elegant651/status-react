@@ -47,7 +47,8 @@
             status-im.ui.screens.hardwallet.connect.subs
             status-im.ui.screens.hardwallet.settings.subs
             status-im.ui.screens.hardwallet.pin.subs
-            status-im.ui.screens.hardwallet.setup.subs))
+            status-im.ui.screens.hardwallet.setup.subs
+            status-im.ui.screens.multiaccounts.recover.subs))
 
 ;; TOP LEVEL ===========================================================================================================
 

@@ -1259,5 +1259,11 @@
     "not-keycard-title": "Not a Keycard",
     "not-keycard-text": "The card you used is not a Keycard. You need to purchase a Keycard to use it",
     "recover-key": "Recover key",
-    "remember-me": "Remember me"
+    "remember-me": "Remember me",
+    "enter-seed-phrase": "Enter Seed phrase",
+    "recover-with-keycard": "Recover with Keycard",
+    "multiaccounts-recover-enter-phrase-title": "Enter your seed phrase",
+    "multiaccounts-recover-enter-phrase-text": "Enter your seed phrase, separate the words by single spaces",
+    "re-encrypt-key": "Re-encrypt your key",
+    "recovery-success-text": "You will have to create a new code or password to re-encrypt your key"
 }

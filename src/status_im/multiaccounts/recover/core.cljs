@@ -93,6 +93,7 @@
                     (update :multiaccounts/recover assoc
                             :processing? false
                             :password ""
+                            :password-confirmation ""
                             :password-error :recover-password-invalid)
                     (update :multiaccounts/recover dissoc
                             :password-valid?))
@@ -127,9 +128,78 @@
 (fx/defn navigate-to-recover-multiaccount-screen [{:keys [db] :as cofx}]
   (fx/merge cofx
             {:db (dissoc db :multiaccounts/recover)}
-            (navigation/navigate-to-cofx :recover nil)))
+            (navigation/navigate-to-cofx :recover-multiaccount nil)))
 
 (re-frame/reg-fx
  :multiaccounts.recover/recover-multiaccount
  (fn [[masked-passphrase password]]
    (recover-multiaccount! masked-passphrase password)))
+
+(fx/defn re-encrypt-pressed
+  {:events [:recover.success.ui/re-encrypt-pressed]}
+  [{:keys [db] :as cofx}]
+  (fx/merge cofx
+            {:db (assoc-in db [:intro-wizard :selected-storage-type] :default)}
+            (navigation/navigate-to-cofx :recover-multiaccount-select-storage nil)))
+
+(fx/defn enter-phrase-pressed
+  {:events [:recover.ui/enter-phrase-pressed]}
+  [{:keys [db] :as cofx}]
+  (fx/merge cofx
+            {:dispatch [:bottom-sheet/hide-sheet]}
+            (navigation/navigate-to-cofx :recover-multiaccount-enter-phrase nil)))
+
+(fx/defn enter-phrase-next-button-pressed
+  {:events [:recover.enter-passphrase.ui/input-submitted
+            :recover.enter-passphrase.ui/next-pressed]}
+  [{:keys [db] :as cofx}]
+  (fx/merge cofx
+            {:db (-> db
+                     (assoc-in [:multiaccounts/recover :address] "0xF84E72a8b067993A758F12f8a25Bb839a27e8777")
+                     (assoc-in [:multiaccounts/recover :pubkey] "0x044da4c5e58efe0cb20c42f3719682b8d17e78038a2a0e46483007da9747ada1984d7f053a2b2201ee7d476101be530021da642280e406fc57b4368ea88b43bdb4"))}
+            (navigation/navigate-to-cofx :recover-multiaccount-success nil)))
+
+(fx/defn cancel-pressed
+  {:events [:recover.ui/cancel-pressed]}
+  [cofx]
+  (navigation/navigate-back cofx))
+
+(fx/defn select-storage-next-pressed
+  {:events [:recover.select-storage.ui/next-pressed]}
+  [{:keys [db] :as cofx}]
+  (let [storage-type (get-in db [:intro-wizard :selected-storage-type])]
+    (if (= storage-type :advanced)
+      {:dispatch [:recovery.ui/keycard-option-pressed]})
+    (navigation/navigate-to-cofx cofx :recover-multiaccount-enter-password nil)))
+
+(fx/defn enter-password-next-button-pressed
+  {:events [:recover.enter-password.ui/input-submitted
+            :recover.enter-password.ui/next-pressed]}
+  [{:keys [db] :as cofx}]
+  (fx/merge cofx
+            (navigation/navigate-to-cofx :recover-multiaccount-confirm-password nil)))
+
+(fx/defn confirm-password-next-button-pressed
+  {:events       [:recover.confirm-password.ui/input-submitted
+                  :recover.confirm-password.ui/next-pressed]
+   :interceptors [(re-frame/inject-cofx :random-guid-generator)]}
+  [{:keys [db] :as cofx}]
+  (fx/merge cofx
+            {:db (assoc db :intro-wizard nil)}
+            (recover-multiaccount)
+            (navigation/navigate-to-cofx :welcome nil)))
+
+(fx/defn enter-phrase-input-changed
+  {:events [:recover.enter-passphrase.ui/input-changed]}
+  [{:keys [db]} input]
+  {:db (assoc-in db [:multiaccounts/recover :passphrase] input)})
+
+(fx/defn enter-password-input-changed
+  {:events [:recover.enter-password.ui/input-changed]}
+  [{:keys [db]} input]
+  {:db (assoc-in db [:multiaccounts/recover :password] input)})
+
+(fx/defn confirm-password-input-changed
+  {:events [:recover.confirm-password.ui/input-changed]}
+  [{:keys [db]} input]
+  {:db (assoc-in db [:multiaccounts/recover :password-confirmation] input)})

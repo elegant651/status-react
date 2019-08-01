@@ -64,6 +64,7 @@
      :main-icons/in-contacts       (js/require "./resources/icons/main/in_contacts.svg")
      :main-icons/info              (js/require "./resources/icons/main/info.svg")
      :main-icons/keycard           (js/require "./resources/icons/main/keycard.svg")
+     :main-icons/keycard-logo      (js/require "./resources/icons/main/keycard-logo.svg")
      :main-icons/language          (js/require "./resources/icons/main/language.svg")
      :main-icons/link              (js/require "./resources/icons/main/link.svg")
      :main-icons/log-level         (js/require "./resources/icons/main/mailserver.svg")

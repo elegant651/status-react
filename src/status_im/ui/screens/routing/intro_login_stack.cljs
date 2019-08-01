@@ -5,7 +5,12 @@
   #{:login
     :progress
     :create-multiaccount
-    :recover
+    :recover-multiaccount
+    :recover-multiaccount-enter-phrase
+    :recover-multiaccount-select-storage
+    :recover-multiaccount-enter-password
+    :recover-multiaccount-confirm-password
+    :recover-multiaccount-success
     :multiaccounts
     :intro
     :intro-wizard
@@ -26,7 +31,6 @@
     :keycard-onboarding-recovery-phrase
     :keycard-onboarding-recovery-phrase-confirm-word1
     :keycard-onboarding-recovery-phrase-confirm-word2
-    :keycard-recovery-enter-mnemonic
     :keycard-recovery-intro
     :keycard-recovery-start
     :keycard-recovery-pair
@@ -40,7 +44,12 @@
    :screens (cond-> [:login
                      :progress
                      :create-multiaccount
-                     :recover
+                     :recover-multiaccount
+                     :recover-multiaccount-enter-phrase
+                     :recover-multiaccount-select-storage
+                     :recover-multiaccount-enter-password
+                     :recover-multiaccount-confirm-password
+                     :recover-multiaccount-success
                      :multiaccounts]
 
               config/hardwallet-enabled?
@@ -73,7 +82,6 @@
               :keycard-onboarding-recovery-phrase
               :keycard-onboarding-recovery-phrase-confirm-word1
               :keycard-onboarding-recovery-phrase-confirm-word2
-              :keycard-recovery-enter-mnemonic
               :keycard-recovery-intro
               :keycard-recovery-start
               :keycard-recovery-pair
