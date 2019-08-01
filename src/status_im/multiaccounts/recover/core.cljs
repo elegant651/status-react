@@ -105,13 +105,11 @@
 
 (fx/defn recover-multiaccount
   [{:keys [db random-guid-generator] :as cofx}]
-  (fx/merge
-   cofx
-   {:db (-> db
-            (assoc-in [:multiaccounts/recover :processing?] true)
-            (assoc :node/on-ready :recover-multiaccount)
-            (assoc :multiaccounts/new-installation-id (random-guid-generator)))}
-   (node/initialize nil)))
+  (let [{:keys [password passphrase]} (:multiaccounts/recover db)]
+    {:db (-> db
+             (assoc-in [:multiaccounts/recover :processing?] true)
+             (assoc :multiaccounts/new-installation-id (random-guid-generator)))
+     :multiaccounts.recover/recover-multiaccount [(security/mask-data passphrase) password]}))
 
 (fx/defn recover-multiaccount-with-checks [{:keys [db] :as cofx}]
   (let [{:keys [passphrase processing?]} (:multiaccounts/recover db)]

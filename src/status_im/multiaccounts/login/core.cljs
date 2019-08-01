@@ -47,9 +47,6 @@
                                       (resolve default-nodes)))))
       (resolve default-nodes))))
 
-(defn login! [address main-account password]
-  (status/login address password main-account [] #(re-frame/dispatch [:multiaccounts.login.callback/login-success %])))
-
 (defn verify! [address password realm-error]
   (status/verify address password
                  #(re-frame/dispatch
@@ -76,14 +73,18 @@
                (re-frame/dispatch [:init.callback/multiaccount-change-error error])))))
 
 ;;;; Handlers
-(fx/defn login [cofx]
-  (if (get-in cofx [:db :hardwallet :multiaccount :whisper-private-key])
+(fx/defn login
+  [{:keys [db] :as cofx}]
+  (if (get-in cofx [:hardwallet :multiaccount :whisper-private-key])
     {:hardwallet/login-with-keycard (-> cofx
                                         (get-in [:db :hardwallet :multiaccount])
                                         (select-keys [:whisper-private-key :encryption-public-key])
                                         (assoc :on-result #(re-frame/dispatch [:multiaccounts.login.callback/login-success %])))}
-    (let [{:keys [address password main-account]} (get-in cofx [:db :multiaccounts/login])]
-      {:multiaccounts.login/login [address main-account password]})))
+    (let [{:keys [address password main-account]} (:multiaccounts/login db)
+          {:keys [name]} (:multiaccount db)]
+      {::login [(types/clj->json {:name name :address address})
+                password
+                (node/get-new-config db address)]})))
 
 (fx/defn initialize-wallet [cofx]
   (fx/merge cofx
@@ -110,16 +111,14 @@
 (fx/defn user-login
   [{:keys [db] :as cofx} create-database?]
   (let [{:keys [address password]} (multiaccounts.model/credentials cofx)]
-    (fx/merge
-     cofx
-     {:db                            (-> db
-                                         (assoc-in [:multiaccounts/login :processing] true)
-                                         (assoc :node/on-ready :login))
-      :multiaccounts.login/clear-web-data nil
-      :data-store/change-multiaccount     [address
-                                           password
-                                           create-database?
-                                           (get-in db [:multiaccounts/multiaccounts address :settings :fleet])]})))
+    (fx/merge cofx
+              {:db (assoc-in db [:multiaccounts/login :processing] true)
+               :multiaccounts.login/clear-web-data nil
+               :data-store/change-multiaccount     [address
+                                                    password
+                                                    create-database?
+                                                    (get-in db [:multiaccounts/multiaccounts address :settings :fleet])]}
+              login)))
 
 (fx/defn multiaccount-and-db-password-do-not-match
   [{:keys [db] :as cofx} error]
@@ -166,53 +165,40 @@
                          all-stored-browsers)]
     {:db (assoc db :browser/browsers browsers)}))
 
-(fx/defn user-login-callback
-  {:events [:multiaccounts.login.callback/login-success]
-   :interceptors [(re-frame/inject-cofx :web3/get-web3)
-                  (re-frame/inject-cofx :data-store/get-all-mailservers)
-                  (re-frame/inject-cofx :data-store/get-all-installations)
-                  (re-frame/inject-cofx :data-store/transport)
-                  (re-frame/inject-cofx :data-store/mailserver-topics)]}
-  [{:keys [db web3] :as cofx} login-result]
-  (let [data    (types/json->clj login-result)
-        error   (:error data)
-        success (empty? error)
-        {:keys [address password save-password?]}
-        (multiaccounts.model/credentials cofx)
+(fx/defn user-login-success
+  [{:keys [db web3] :as cofx}]
+  (let [{:keys [address password save-password?]} (multiaccounts.model/credentials cofx)
         network-type (:network/type db)]
     ;; check if logged into multiaccount
     (when address
-      (if success
-        (fx/merge
-         cofx
-         {:db                       (-> db
-                                        (dissoc :multiaccounts/login)
-                                        (update :hardwallet dissoc
-                                                :on-card-read
-                                                :card-read-in-progress?
-                                                :pin
-                                                :multiaccount))
-          ::json-rpc/call
-          [{:method "browsers_getBrowsers"
-            :on-success #(re-frame/dispatch [::initialize-browsers %])}
-           {:method "permissions_getDappPermissions"
-            :on-success #(re-frame/dispatch [::initialize-dapp-permissions %])}]
-          :web3/set-default-account [web3 address]
-          :web3/fetch-node-version  [web3
-                                     #(re-frame/dispatch
-                                       [:web3/fetch-node-version-callback %])]}
-         (fn [_]
-           (when save-password?
-             {:keychain/save-user-password [address password]}))
-         (tribute-to-talk/init)
-         (mobile-network/on-network-status-change)
-         (protocol/initialize-protocol)
-         (universal-links/process-stored-event)
-         (chaos-mode/check-chaos-mode)
-         (finish-keycard-setup)
-         (when-not platform/desktop?
-           (initialize-wallet)))
-        (multiaccount-and-db-password-do-not-match cofx error)))))
+      (fx/merge cofx
+                {:db (-> db
+                         (dissoc :multiaccounts/login)
+                         (update :hardwallet dissoc
+                                 :on-card-read
+                                 :card-read-in-progress?
+                                 :pin
+                                 :multiaccount))
+                 ::json-rpc/call
+                 [{:method "browsers_getBrowsers"
+                   :on-success #(re-frame/dispatch [::initialize-browsers %])}
+                  {:method "permissions_getDappPermissions"
+                   :on-success #(re-frame/dispatch [::initialize-dapp-permissions %])}]
+                 :web3/set-default-account [web3 address]
+                 :web3/fetch-node-version  [web3
+                                            #(re-frame/dispatch
+                                              [:web3/fetch-node-version-callback %])]}
+                (fn [_]
+                  (when save-password?
+                    {:keychain/save-user-password [address password]}))
+                (tribute-to-talk/init)
+                (mobile-network/on-network-status-change)
+                (protocol/initialize-protocol)
+                (universal-links/process-stored-event)
+                (chaos-mode/check-chaos-mode)
+                (finish-keycard-setup)
+                (when-not platform/desktop?
+                  (initialize-wallet))))))
 
 (fx/defn show-migration-error-dialog
   [{:keys [db]} realm-error]
@@ -279,11 +265,9 @@
 
 (fx/defn verify-multiaccount
   [{:keys [db] :as cofx} {:keys [realm-error]}]
-  (fx/merge cofx
-            {:db (-> db
-                     (assoc :node/on-ready :verify-multiaccount)
-                     (assoc :realm-error realm-error))}
-            (node/initialize nil)))
+  (let [{:keys [address password]} (multiaccounts.model/credentials cofx)]
+    {:db (assoc db :realm-error realm-error)
+     :multiaccounts.login/verify [address password (:realm-error db)]}))
 
 (fx/defn unknown-realm-error
   [cofx {:keys [realm-error erase-button]}]
@@ -376,9 +360,11 @@
                                    :ios-fallback-label (i18n/label :t/biometric-auth-login-ios-fallback-label)}))
 
 (re-frame/reg-fx
- :multiaccounts.login/login
- (fn [[address main-account password]]
-   (login! address main-account (security/safe-unmask-data password))))
+ ::login
+ (fn [[account-data password config]]
+   (status/save-account-and-login account-data
+                                  (security/safe-unmask-data password)
+                                  config)))
 
 (re-frame/reg-fx
  :multiaccounts.login/verify

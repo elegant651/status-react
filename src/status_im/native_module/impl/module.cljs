@@ -13,6 +13,9 @@
 (defn init-keystore []
   (.initKeystore (status)))
 
+(defn open-accounts [callback]
+  (.openAccounts (status) callback))
+
 (defonce listener-initialized (atom false))
 
 (when-not @listener-initialized
@@ -20,19 +23,9 @@
   (.addListener r/device-event-emitter "gethEvent"
                 #(re-frame/dispatch [:signals/signal-received (.-jsonEvent %)])))
 
-(defonce node-started (atom false))
-
-(defn stop-node []
-  (reset! node-started false)
-  (when (status)
-    (.stopNode (status))))
-
-(defn node-ready []
-  (reset! node-started true))
-
-(defn start-node [config]
-  (when (status)
-    (.startNode (status) config)))
+(defn stop-node [])
+(defn node-ready [])
+(defn start-node [config])
 
 (defonce account-creation? (atom false))
 
@@ -58,11 +51,11 @@
     (.sendLogs (status) dbJson js-logs callback)))
 
 (defn add-peer [enode on-result]
-  (when (and @node-started (status))
+  (when (status)
     (.addPeer (status) enode on-result)))
 
 (defn recover-account [passphrase password on-result]
-  (when (and @node-started (status))
+  (when (status)
     (.recoverAccount (status) passphrase password on-result)))
 
 (defn multiaccount-generate-and-derive-addresses [n mnemonic-length paths on-result]
@@ -81,20 +74,15 @@
 
                              on-result))
 
-(defn login [address password main-account watch-addresses on-result]
-  (when (and @node-started (status))
-    (.login (status)
-            (types/clj->json {:chatAddress address :password password
-                              :mainAccount main-account :watch-addresses watch-addresses})
-            on-result)))
+(defn save-account-and-login
+  [account-data password config]
+  (.saveAccountAndLogin (status) account-data password config))
 
 (defn verify [address password on-result]
-  (when (and @node-started (status))
-    (.verify (status) address password on-result)))
+  (.verify (status) address password on-result))
 
 (defn login-with-keycard [whisper-private-key encryption-public-key on-result]
-  (when (and @node-started (status))
-    (.loginWithKeycard (status) whisper-private-key encryption-public-key on-result)))
+  (.loginWithKeycard (status) whisper-private-key encryption-public-key on-result))
 
 (defn set-soft-input-mode [mode]
   (when (status)
@@ -106,40 +94,31 @@
     (.clearStorageAPIs (status))))
 
 (defn call-rpc [payload callback]
-  (when (and @node-started (status))
-    (.callRPC (status) payload callback)))
+  (.callRPC (status) payload callback))
 
 (defn call-private-rpc [payload callback]
-  (when (and @node-started (status))
-    (.callPrivateRPC (status) payload callback)))
+  (.callPrivateRPC (status) payload callback))
 
 (defn sign-message [rpcParams callback]
-  (when (and @node-started (status))
-    (.signMessage (status) rpcParams callback)))
+  (.signMessage (status) rpcParams callback))
 
 (defn hash-transaction [rpcParams callback]
-  (when (and @node-started (status))
-    (.hashTransaction (status) rpcParams callback)))
+  (.hashTransaction (status) rpcParams callback))
 
 (defn hash-message [message callback]
-  (when (and @node-started (status))
-    (.hashMessage (status) message callback)))
+  (.hashMessage (status) message callback))
 
 (defn hash-typed-data [data callback]
-  (when (and @node-started (status))
-    (.hashTypedData (status) data callback)))
+  (.hashTypedData (status) data callback))
 
 (defn sign-typed-data [data account password callback]
-  (when (and @node-started (status))
-    (.signTypedData (status) data account password callback)))
+  (.signTypedData (status) data account password callback))
 
 (defn send-transaction [rpcParams password callback]
-  (when (and @node-started (status))
-    (.sendTransaction (status) rpcParams password callback)))
+  (.sendTransaction (status) rpcParams password callback))
 
 (defn send-transaction-with-signature [rpcParams sig callback]
-  (when (and @node-started (status))
-    (.sendTransactionWithSignature (status) rpcParams sig callback)))
+  (.sendTransactionWithSignature (status) rpcParams sig callback))
 
 (defn close-application []
   (.closeApplication (status)))

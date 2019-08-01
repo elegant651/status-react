@@ -46,44 +46,22 @@
   (let [inverted  (map-invert step-kw-to-num)]
     (inverted (inc (step-kw-to-num step)))))
 
-(defn create-multiaccount! [{:keys [id password]}]
-  (if id
-    (status/multiaccount-store-derived
-     id
-     [constants/path-whisper constants/path-default-wallet]
-     password
-     #(re-frame/dispatch [:multiaccounts.create.callback/create-multiaccount-success password]))
-    (status/create-multiaccount
-     password
-     #(re-frame/dispatch [:multiaccounts.create.callback/create-multiaccount-success (types/json->clj %) password]))))
+#_(defn create-multiaccount! [{:keys [id password]}]
+    (if id
+      (status/multiaccount-store-derived
+       id
+       [constants/path-whisper constants/path-default-wallet]
+       password
+       #(re-frame/dispatch [:multiaccounts.create.callback/create-multiaccount-success password]))
+      (status/create-multiaccount
+       password
+       #(re-frame/dispatch [:multiaccounts.create.callback/create-multiaccount-success (types/json->clj %) password]))))
 
-(defn create-multiaccount
-  [{:keys [db] :as   cofx}]
-  (if (:intro-wizard db)
-    (let [{:keys [selected-id key-code]} (:intro-wizard db)]
-      (fx/merge
-       cofx
-       {:multiaccounts.create/create-multiaccount {:id selected-id
-                                                   :password (get-in db [:multiaccounts/create :password] key-code)}}))
-    (fx/merge
-     cofx
-     {:db (-> db
-              (update :multiaccounts/create assoc
-                      :id  (get-in db [:intro-wizard :selected-id])
-                      :password (or (get-in db [:multiaccounts/create :password])
-                                    (get-in db [:intro-wizard :key-code]))
-                      :step :multiaccount-creating
-                      :error nil)
-              (assoc :node/on-ready :create-multiaccount
-                     :multiaccounts/new-installation-id (random/guid)))}
-     (node/initialize nil))))
-
-(fx/defn add-multiaccount
-  "Takes db and new multiaccount, creates map of effects describing adding multiaccount to database and realm"
-  [cofx {:keys [address] :as multiaccount}]
-  (let [db (:db cofx)]
-    {:db                 (assoc-in db [:multiaccounts/multiaccounts address] multiaccount)
-     :data-store/base-tx [(multiaccounts-store/save-multiaccount-tx multiaccount)]}))
+(fx/defn create-multiaccount
+  [{:keys [db] :as cofx}]
+  (let [{:keys [selected-id key-code]} (:intro-wizard db)
+        password (get-in db [:multiaccounts/create :password] key-code)]
+    {:multiaccounts.create/create-multiaccount [selected-id password]}))
 
 (defn reset-multiaccount-creation [{db :db}]
   {:db (update db :multiaccounts/create assoc
@@ -262,11 +240,12 @@
                                 :keycard-paired-on          keycard-paired-on}]
     (when-not (string/blank? publicKey)
       (fx/merge cofx
-                {:db (assoc db :multiaccounts/login {:address      address
-                                                     :main-account (:address default-wallet-account)
-                                                     :password     password
-                                                     :processing   true})}
-                (add-multiaccount new-multiaccount)
+                {:db (-> db
+                         (assoc :multiaccounts/login {:address      address
+                                                      :main-account (:address default-wallet-account)
+                                                      :password     password
+                                                      :processing   true})
+                         (assoc-in [:multiaccounts/multiaccounts address] new-multiaccount))}
                 (when login?
                   (multiaccounts.login/user-login true))
                 (when (:intro-wizard db)
@@ -339,4 +318,9 @@
 
 (re-frame/reg-fx
  :multiaccounts.create/create-multiaccount
- create-multiaccount!)
+ (fn [[id password]]
+   (status/multiaccount-store-derived
+    id
+    [constants/path-whisper constants/path-default-wallet]
+    password
+    #(re-frame/dispatch [:multiaccounts.create.callback/create-multiaccount-success password]))))

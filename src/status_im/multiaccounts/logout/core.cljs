@@ -16,14 +16,6 @@
             (transport/stop-whisper)
             (chaos-mode/stop-checking)))
 
-(fx/defn leave-multiaccount
-  [cofx]
-  (fx/merge
-   cofx
-   (init/initialize-app-db)
-   (init/load-multiaccounts-and-initialize-views)
-   (node/stop)))
-
 (fx/defn show-logout-confirmation [_]
   {:ui/show-confirmation
    {:title               (i18n/label :t/logout-title)

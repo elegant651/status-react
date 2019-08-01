@@ -63,11 +63,21 @@
   [cofx]
   {:keychain/get-encryption-key [:init.callback/get-encryption-key-success]})
 
+(fx/defn initialize-multiaccounts
+  {:events [::initialize-multiaccounts]}
+  [{:keys [db all-multiaccounts]}]
+  (let [multiaccounts (->> all-multiaccounts
+                           (map (fn [{:keys [address] :as multiaccount}]
+                                  [address multiaccount]))
+                           (into {}))]
+    {:db (assoc db :multiaccounts/multiaccounts multiaccounts)}))
+
 (fx/defn start-app [cofx]
   (fx/merge cofx
             {:init/get-device-UUID                  nil
              :init/get-supported-biometric-auth     nil
              :init/init-keystore                    nil
+             :init/open-multiaccounts #(re-frame/dispatch [::initialize-multiaccounts %])
              :init/restore-native-settings          nil
              :ui/listen-to-window-dimensions-change nil
              :notifications/init                    nil
@@ -128,13 +138,6 @@
     :on-cancel           #(re-frame/dispatch [:init.ui/data-reset-cancelled encryption-key])
     :on-accept           #(re-frame/dispatch [:init.ui/data-reset-accepted])}})
 
-(fx/defn load-multiaccounts [{:keys [db all-multiaccounts]}]
-  (let [multiaccounts (->> all-multiaccounts
-                           (map (fn [{:keys [address] :as multiaccount}]
-                                  [address multiaccount]))
-                           (into {}))]
-    {:db (assoc db :multiaccounts/multiaccounts multiaccounts)}))
-
 (fx/defn initialize-views
   [cofx]
   (let [{{:multiaccounts/keys [multiaccounts] :as db} :db} cofx]
@@ -155,13 +158,6 @@
             {:keys [address public-key photo-path name accounts]} (first (selection-fn (vals multiaccounts)))]
         (multiaccounts.login/open-login cofx address photo-path name public-key accounts)))))
 
-(fx/defn load-multiaccounts-and-initialize-views
-  "DB has been decrypted, load multiaccounts and initialize-view"
-  [cofx]
-  (fx/merge cofx
-            (load-multiaccounts)
-            (initialize-views)))
-
 (fx/defn initialize-multiaccount-db [{:keys [db web3]} address]
   (let [{:universal-links/keys [url]
          :keys                 [multiaccounts/multiaccounts multiaccounts/create networks/networks network
@@ -170,7 +166,7 @@
                                 intro-wizard
                                 desktop/desktop hardwallet custom-fleets supported-biometric-auth
                                 device-UUID semaphores multiaccounts/login]
-         :node/keys            [status on-ready]
+         :node/keys            [status]
          :or                   {network (get app-db :network)}} db
         current-multiaccount (get multiaccounts address)
         multiaccount-network-id (get current-multiaccount :network network)
@@ -180,7 +176,6 @@
                         :navigation-stack navigation-stack
                         :node/status status
                         :intro-wizard intro-wizard
-                        :node/on-ready on-ready
                         :multiaccounts/create create
                         :desktop/desktop (merge desktop (:desktop/desktop app-db))
                         :networks/networks networks
@@ -254,6 +249,11 @@
 (re-frame/reg-fx
  :init/restore-native-settings
  restore-native-settings!)
+
+(re-frame/reg-fx
+ :init/open-multiaccounts
+ (fn [callback]
+   (status/open-accounts callback)))
 
 (re-frame/reg-fx
  :init/init-keystore

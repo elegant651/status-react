@@ -1625,10 +1625,9 @@
                        (assoc-in [:hardwallet :on-card-connected] nil)
                        (update :hardwallet dissoc :recovery-phrase)
                        (update-in [:hardwallet :secrets] dissoc :pin :puk :password)
-                       (assoc :node/on-ready :create-keycard-multiaccount)
                        (assoc :multiaccounts/new-installation-id (random-guid-generator))
                        (update-in [:hardwallet :secrets] dissoc :mnemonic))}
-              (node/initialize nil)
+              (create-keycard-multiaccount)
               (when-not (= flow :import)
                 (navigation/navigate-to-cofx :keycard-welcome nil)))))
 

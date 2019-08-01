@@ -6,18 +6,16 @@
 (defn init-keystore []
   (native-module/init-keystore))
 
-(defn start-node [config]
-  (native-module/start-node config))
+(defn open-accounts [callback]
+  (native-module/open-accounts callback))
 
-(def node-started (atom false))
+(defn save-account-and-login
+  [account-data password config]
+  (native-module/save-account-and-login account-data password config))
 
-(defn node-ready []
-  (reset! node-started true)
-  (native-module/node-ready))
-
-(defn stop-node []
-  (reset! node-started false)
-  (native-module/stop-node))
+(defn start-node [config])
+(defn node-ready [])
+(defn stop-node [])
 
 (defn create-multiaccount [password callback]
   (native-module/create-account password callback))
@@ -30,9 +28,6 @@
 
 (defn multiaccount-generate-and-derive-addresses [n mnemonic-length paths callback]
   (native-module/multiaccount-generate-and-derive-addresses n mnemonic-length paths callback))
-
-(defn login [address password main-account watch-addresses callback]
-  (native-module/login address password main-account watch-addresses callback))
 
 (defn verify [address password callback]
   (native-module/verify address password callback))
@@ -48,12 +43,10 @@
   (native-module/clear-web-data))
 
 (defn call-rpc [payload callback]
-  (when @node-started
-    (native-module/call-rpc payload callback)))
+  (native-module/call-rpc payload callback))
 
 (defn call-private-rpc [payload callback]
-  (when @node-started
-    (native-module/call-private-rpc payload callback)))
+  (native-module/call-private-rpc payload callback))
 
 (defn sign-message [rpcParams callback]
   (native-module/sign-message rpcParams callback))

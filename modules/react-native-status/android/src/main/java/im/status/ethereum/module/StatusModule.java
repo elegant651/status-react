@@ -197,7 +197,7 @@ class StatusModule extends ReactContextBaseJavaModule implements LifecycleEventL
         return file.getAbsolutePath();
     }
 
-    private void doStartNode(final String jsonConfigString) {
+    private String prepareDirAndUpdateConfig(final String jsonConfigString) {
 
         Activity currentActivity = getCurrentActivity();
 
@@ -258,17 +258,27 @@ class StatusModule extends ReactContextBaseJavaModule implements LifecycleEventL
 
             prettyPrintConfig(updatedJsonConfigString);
 
-            String res = Statusgo.startNode(updatedJsonConfigString);
-            if (res.startsWith("{\"error\":\"\"")) {
-                Log.d(TAG, "StartNode result: " + res);
-                Log.d(TAG, "Geth node started");
-            }
-            else {
-                Log.e(TAG, "StartNode failed: " + res);
-            }
+            return updatedJsonConfigString;
         } catch (JSONException e) {
             Log.e(TAG, "updateConfig failed: " + e.getMessage());
             System.exit(1);
+
+            return "";
+        }
+    }
+
+
+    @ReactMethod
+    public void saveAccountAndLogin(final String accountData, final String password , final String config) {
+        Log.d(TAG, "saveAccountAndLogin");
+        String finalConfig = prepareDirAndUpdateConfig(config);
+        String result = Statusgo.saveAccountAndLogin(accountData, password, finalConfig);
+        if (result.startsWith("{\"error\":\"\"")) {
+            Log.d(TAG, "StartNode result: " + result);
+            Log.d(TAG, "Geth node started");
+        }
+        else {
+            Log.e(TAG, "StartNode failed: " + result);
         }
     }
 
@@ -375,54 +385,24 @@ class StatusModule extends ReactContextBaseJavaModule implements LifecycleEventL
     }
 
     @ReactMethod
-    public void startNode(final String config) {
-        Log.d(TAG, "startNode");
+    private void openAccounts(final Callback callback) {
+        Activity currentActivity = getCurrentActivity();
+
+        final String rootDir = currentActivity.getApplicationInfo().dataDir;
+        Log.d(TAG, "openAccounts");
         if (!checkAvailability()) {
-            Log.e(TAG, "[startNode] Activity doesn't exist, cannot start node");
+            Log.e(TAG, "[openAccounts] Activity doesn't exist, cannot call openAccounts");
             System.exit(0);
             return;
         }
 
         Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                doStartNode(config);
-            }
-        };
-
-        StatusThreadPoolExecutor.getInstance().execute(r);
-    }
-
-    @ReactMethod
-    public void stopNode() {
-
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "stopNode");
-                String res = Statusgo.stopNode();
-            }
-        };
-
-        StatusThreadPoolExecutor.getInstance().execute(r);
-    }
-
-    @ReactMethod
-    public void login(final String json, final Callback callback) {
-        Log.d(TAG, "login");
-        if (!checkAvailability()) {
-            callback.invoke(false);
-            return;
-        }
-
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                String result = Statusgo.login(json);
-
-                callback.invoke(result);
-            }
-        };
+                @Override
+                public void run() {
+                    String result =Statusgo.openAccounts(rootDir);
+                    callback.invoke(result);
+                }
+            };
 
         StatusThreadPoolExecutor.getInstance().execute(r);
     }

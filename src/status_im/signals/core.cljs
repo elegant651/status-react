@@ -13,38 +13,17 @@
             [status-im.utils.fx :as fx]
             [status-im.utils.security :as security]
             [status-im.utils.types :as types]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [re-frame.core :as re-frame]))
 
 (fx/defn status-node-started
-  [{db :db :as cofx}]
-  (let [{:node/keys [restart? address on-ready]
-         :multiaccounts/keys [create]} db]
-    (fx/merge cofx
-              {:db         (-> db
-                               (assoc :node/status :started)
-                               (dissoc :node/restart? :node/address))
-               :node/ready nil}
-
-              (when restart?
-                (node/initialize address))
-              (case on-ready
-                :login
-                (multiaccounts.login/login)
-                :verify-multiaccount
-                (let [{:keys [address password]} (multiaccounts.model/credentials cofx)]
-                  (fn [_]
-                    {:multiaccounts.login/verify
-                     [address password (:realm-error db)]}))
-                :create-multiaccount
-                (fn [_]
-                  {:multiaccounts.create/create-multiaccount (select-keys create [:id :password])})
-                :recover-multiaccount
-                (fn [{:keys [db]}]
-                  (let [{:keys [password passphrase]} (:multiaccounts/recover db)]
-                    {:multiaccounts.recover/recover-multiaccount
-                     [(security/mask-data passphrase) password]}))
-                :create-keycard-multiaccount
-                (hardwallet/create-keycard-multiaccount)))))
+  [{db :db :as cofx} event]
+  (let [[address nodes] (:realm/started? db)]
+    (cond-> {:db (-> db
+                     (assoc :node/status :started)
+                     (dissoc :node/restart? :node/address))}
+      (:realm/started? db)
+      (assoc :dispatch [:init.callback/multiaccount-change-success address nodes]))))
 
 (fx/defn status-node-stopped
   [{db :db}]
@@ -65,7 +44,7 @@
   [cofx event-str]
   (let [{:keys [type event]} (types/json->clj event-str)]
     (case type
-      "node.ready"         (status-node-started cofx)
+      "node.login"         (status-node-started cofx event)
       "node.stopped"       (status-node-stopped cofx)
       "envelope.sent"      (transport.message/update-envelope-status cofx (:hash event) :sent)
       "envelope.expired"   (transport.message/update-envelope-status cofx (:hash event) :not-sent)

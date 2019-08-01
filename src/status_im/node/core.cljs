@@ -167,39 +167,16 @@
                 {:error error}
                 (when sync-state (js->clj sync-state :keywordize-keys true))))})
 
-(fx/defn start
-  [{:keys [db]} address]
-  (let [network     (if address
-                      (get-multiaccount-network db address)
-                      (:network db))
-        node-config (if (= (:node/on-ready db) :verify-multiaccount)
-                      (get-verify-multiaccount-config db network)
-                      (get-multiaccount-node-config db address))
+(defn get-new-config [db address]
+  (let [network     (get-multiaccount-network db address)
+        node-config (get-multiaccount-node-config db address)
         node-config-json (types/clj->json node-config)]
-    (log/info "Node config: " node-config-json)
-    {:db        (assoc db
-                       :network network
-                       :node/status :starting)
-     :node/start node-config-json}))
+    node-config-json))
 
 (fx/defn stop
   [{:keys [db]}]
   {:db        (assoc db :node/status :stopping)
    :node/stop nil})
-
-(fx/defn initialize
-  [{{:node/keys [status] :as db} :db :as cofx} address]
-  (let [restart {:db (assoc db :node/restart? true :node/address address)}]
-    (case status
-      :started nil
-      :starting restart
-      :stopping restart
-      (start cofx address))))
-
-(re-frame/reg-fx
- :node/start
- (fn [config]
-   (status/start-node config)))
 
 (re-frame/reg-fx
  :node/ready

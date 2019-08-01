@@ -105,9 +105,8 @@
 
 (handlers/register-handler-fx
  :init.callback/init-store-success
- [(re-frame/inject-cofx :data-store/get-all-multiaccounts)]
  (fn [cofx _]
-   (init/load-multiaccounts-and-initialize-views cofx)))
+   (init/initialize-views cofx)))
 
 (handlers/register-handler-fx
  :init.callback/init-store-error
@@ -127,21 +126,24 @@
 (defn multiaccount-change-success
   [{:keys [db] :as cofx} [_ address nodes]]
   (let [{:node/keys [status]} db]
-    (fx/merge
-     cofx
-     (when nodes
-       (fleet/set-nodes :eth.contract nodes))
-     (if (= status :started)
-       (multiaccounts.login/login)
-       (node/initialize (get-in db [:multiaccounts/login :address])))
-     (init/initialize-multiaccount address)
-     (mailserver/initialize-ranges)
-     (chat.loading/initialize-chats {:to 10}))))
+    (if (= status :started)
+      (fx/merge
+       cofx
+       (when nodes
+         (fleet/set-nodes :eth.contract nodes))
+       (init/initialize-multiaccount address)
+       (mailserver/initialize-ranges)
+       (chat.loading/initialize-chats {:to 10})
+       (multiaccounts.login/user-login-success))
+      {:db (assoc db :realm/started? [address nodes])})))
 
 (handlers/register-handler-fx
  :init.callback/multiaccount-change-success
  [(re-frame/inject-cofx :web3/get-web3)
   (re-frame/inject-cofx :data-store/get-all-contacts)
+  (re-frame/inject-cofx :data-store/get-all-mailservers)
+  (re-frame/inject-cofx :data-store/transport)
+  (re-frame/inject-cofx :data-store/mailserver-topics)
   (re-frame/inject-cofx :data-store/get-all-installations)
   (re-frame/inject-cofx :data-store/all-chats)
   (re-frame/inject-cofx :data-store/all-chat-requests-ranges)]
@@ -376,9 +378,8 @@
 
 (handlers/register-handler-fx
  :multiaccounts.logout/filters-removed
- [(re-frame/inject-cofx :data-store/get-all-multiaccounts)]
  (fn [cofx]
-   (multiaccounts.logout/leave-multiaccount cofx)))
+   (init/initialize-app-db cofx)))
 
 ;; multiaccounts update module
 
