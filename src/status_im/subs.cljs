@@ -111,7 +111,6 @@
 (reg-root-key-sub :multiaccounts/multiaccounts :multiaccounts/multiaccounts)
 (reg-root-key-sub :multiaccounts/login :multiaccounts/login)
 (reg-root-key-sub :multiaccount :multiaccount)
-(reg-root-key-sub :multiaccounts/create :multiaccounts/create)
 (reg-root-key-sub :get-recover-multiaccount :multiaccounts/recover)
 ;;chat
 (reg-root-key-sub ::cooldown-enabled? :chat/cooldown-enabled?)
@@ -350,12 +349,6 @@
  :<- [:multiaccount-settings]
  (fn [sett]
    (fleet/current-fleet-sub sett)))
-
-(re-frame/reg-sub
- :get-multiaccount-creation-next-enabled?
- :<- [:multiaccounts/create]
- (fn [create]
-   (multiaccounts.model/multiaccount-creation-next-enabled? create)))
 
 (re-frame/reg-sub
  :multiaccount-settings

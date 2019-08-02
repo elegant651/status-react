@@ -13,6 +13,10 @@
   [account-data password config]
   (native-module/save-account-and-login account-data password config))
 
+(defn login
+  [account-data password]
+  (native-module/login account-data password))
+
 (defn start-node [config])
 (defn node-ready [])
 (defn stop-node [])
@@ -38,9 +42,6 @@
 
 (defn set-soft-input-mode [mode]
   (native-module/set-soft-input-mode mode))
-
-(defn clear-web-data []
-  (native-module/clear-web-data))
 
 (defn call-rpc [payload callback]
   (native-module/call-rpc payload callback))

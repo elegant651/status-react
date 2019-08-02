@@ -10,11 +10,26 @@
   (when (exists? (.-NativeModules rn-dependencies/react-native))
     (.-Status (.-NativeModules rn-dependencies/react-native))))
 
+(defn clear-web-data []
+  (when (status)
+    (.clearCookies (status))
+    (.clearStorageAPIs (status))))
+
 (defn init-keystore []
   (.initKeystore (status)))
 
 (defn open-accounts [callback]
-  (.openAccounts (status) callback))
+  (.openAccounts (status) #(callback (types/json->clj %))))
+
+(defn save-account-and-login
+  [account-data password config]
+  (clear-web-data)
+  (.saveAccountAndLogin (status) account-data password config))
+
+(defn login
+  [account-data password]
+  (clear-web-data)
+  (.login (status) account-data password))
 
 (defonce listener-initialized (atom false))
 
@@ -74,24 +89,16 @@
 
                              on-result))
 
-(defn save-account-and-login
-  [account-data password config]
-  (.saveAccountAndLogin (status) account-data password config))
-
 (defn verify [address password on-result]
   (.verify (status) address password on-result))
 
 (defn login-with-keycard [whisper-private-key encryption-public-key on-result]
+  (clear-web-data)
   (.loginWithKeycard (status) whisper-private-key encryption-public-key on-result))
 
 (defn set-soft-input-mode [mode]
   (when (status)
     (.setSoftInputMode (status) mode)))
-
-(defn clear-web-data []
-  (when (status)
-    (.clearCookies (status))
-    (.clearStorageAPIs (status))))
 
 (defn call-rpc [payload callback]
   (.callRPC (status) payload callback))

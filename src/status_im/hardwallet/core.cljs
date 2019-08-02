@@ -453,7 +453,7 @@
 (fx/defn password-option-pressed
   [{:keys [db] :as cofx}]
   (if (= (get-in db [:hardwallet :flow]) :create)
-    (multiaccounts.create/navigate-to-create-multiaccount-screen cofx)
+    #() ;;TODO with v1 flow
     (multiaccounts.recover/navigate-to-recover-multiaccount-screen cofx)))
 
 (defn settings-screen-did-load
@@ -1642,7 +1642,7 @@
 
 (fx/defn on-get-keys-success
   [{:keys [db] :as cofx} data]
-  (let [{:keys [wallet-address encryption-public-key] :as account-data} (js->clj data :keywordize-keys true)
+  (let [{:keys [wallet-address encryption-public-key whisper-private-key] :as account-data} (js->clj data :keywordize-keys true)
         {:keys [photo-path name]} (get-in db [:multiaccounts/multiaccounts wallet-address])
         instance-uid (get-in db [:hardwallet :application-info :instance-uid])]
     (fx/merge cofx
@@ -1657,8 +1657,10 @@
                                                             :photo-path photo-path
                                                             :name name))
                :hardwallet/get-application-info {:pairing    (get-pairing db instance-uid)
-                                                 :on-success :hardwallet/save-key-uid-to-multiaccount}}
-              (multiaccounts.login/user-login true))))
+                                                 :on-success :hardwallet/save-key-uid-to-multiaccount}
+               :hardwallet/login-with-keycard {:whisper-private-key whisper-private-key
+                                               :encryption-public-key encryption-public-key
+                                               :on-result #(re-frame/dispatch [:multiaccounts.login.callback/login-success %])}})))
 
 (fx/defn on-get-keys-error
   [{:keys [db] :as cofx} error]

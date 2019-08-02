@@ -1,7 +1,6 @@
 (ns status-im.ui.screens.routing.screens
   (:require [status-im.extensions.module :as extensions.module]
             [status-im.ui.screens.about-app.views :as about-app]
-            [status-im.ui.screens.multiaccounts.create.views :as multiaccounts.create]
             [status-im.ui.screens.multiaccounts.login.views :as login]
             [status-im.ui.screens.multiaccounts.recover.views :as recover]
             [status-im.ui.screens.multiaccounts.views :as multiaccounts]
@@ -69,7 +68,6 @@
 (def all-screens
   {:login                                            login/login
    :progress                                         progress/progress
-   :create-multiaccount                              multiaccounts.create/create-multiaccount
    :recover                                          recover/recover
    :multiaccounts                                    multiaccounts/multiaccounts
    :intro                                            intro/intro

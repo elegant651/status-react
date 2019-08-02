@@ -1,27 +1,23 @@
 (ns status-im.signals.core
-  (:require [status-im.multiaccounts.model :as multiaccounts.model]
-            [status-im.multiaccounts.login.core :as multiaccounts.login]
-            [status-im.chat.models.loading :as chat.loading]
+  (:require [status-im.chat.models.loading :as chat.loading]
             [status-im.contact-recovery.core :as contact-recovery]
             [status-im.ethereum.subscriptions :as ethereum.subscriptions]
-            [status-im.hardwallet.core :as hardwallet]
             [status-im.mailserver.core :as mailserver]
+            [status-im.multiaccounts.model :as multiaccounts.model]
             [status-im.node.core :as node]
             [status-im.pairing.core :as pairing]
-            [status-im.transport.message.core :as transport.message]
             [status-im.transport.filters.core :as transport.filters]
+            [status-im.transport.message.core :as transport.message]
             [status-im.utils.fx :as fx]
-            [status-im.utils.security :as security]
             [status-im.utils.types :as types]
-            [taoensso.timbre :as log]
-            [re-frame.core :as re-frame]))
+            [taoensso.timbre :as log]))
 
 (fx/defn status-node-started
   [{db :db :as cofx} event]
   (let [[address nodes] (:realm/started? db)]
-    (cond-> {:db (-> db
-                     (assoc :node/status :started)
-                     (dissoc :node/restart? :node/address))}
+    ;; TODO: this is just needed while real still contains useful data
+    (cond-> {:db (assoc db :node/status :started)}
+
       (:realm/started? db)
       (assoc :dispatch [:init.callback/multiaccount-change-success address nodes]))))
 

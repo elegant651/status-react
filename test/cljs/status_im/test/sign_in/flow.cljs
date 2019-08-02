@@ -17,8 +17,6 @@
                                                        :password "password"}}}
           create-database? false
           efx              (login.core/user-login cofx create-database?)]
-      (testing "Web data cleared."
-        (is (contains? efx :multiaccounts.login/clear-web-data)))
       (testing "Change multiaccount."
         (is (= (:data-store/change-multiaccount efx)
                ["address" "password" false "fleet"])))

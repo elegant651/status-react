@@ -282,6 +282,18 @@ class StatusModule extends ReactContextBaseJavaModule implements LifecycleEventL
         }
     }
 
+    @ReactMethod
+    public void login(final String accountData, final String password) {
+        Log.d(TAG, "login");
+        String result = Statusgo.login(accountData, password);
+        if (result.startsWith("{\"error\":\"\"")) {
+            Log.d(TAG, "Login result: " + result);
+        }
+        else {
+            Log.e(TAG, "Login failed: " + result);
+        }
+    }
+
     private String getOldExternalDir() {
         File extStore = Environment.getExternalStorageDirectory();
         return extStore.exists() ? pathCombine(extStore.getAbsolutePath(), "ethereum/testnet") : getNewInternalDir();

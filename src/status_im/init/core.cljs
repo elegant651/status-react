@@ -1,8 +1,6 @@
 (ns status-im.init.core
   (:require [re-frame.core :as re-frame]
-            [status-im.multiaccounts.login.core :as multiaccounts.login]
-            [status-im.multiaccounts.update.core :as multiaccounts.update]
-            [status-im.browser.core :as browser]
+            [status-im.biometric-auth.core :as biometric-auth]
             [status-im.chat.models :as chat-model]
             [status-im.contact.core :as contact]
             [status-im.data-store.core :as data-store]
@@ -11,9 +9,9 @@
             [status-im.extensions.module :as extensions.module]
             [status-im.i18n :as i18n]
             [status-im.models.dev-server :as models.dev-server]
+            [status-im.multiaccounts.login.core :as multiaccounts.login]
             [status-im.native-module.core :as status]
             [status-im.notifications.core :as notifications]
-            [status-im.pairing.core :as pairing]
             [status-im.react-native.js-dependencies :as rn-dependencies]
             [status-im.stickers.core :as stickers]
             [status-im.ui.screens.db :refer [app-db]]
@@ -21,7 +19,6 @@
             [status-im.utils.fx :as fx]
             [status-im.utils.keychain.core :as keychain]
             [status-im.utils.platform :as platform]
-            [status-im.biometric-auth.core :as biometric-auth]
             [taoensso.timbre :as log]))
 
 (defn init-store!
@@ -65,11 +62,11 @@
 
 (fx/defn initialize-multiaccounts
   {:events [::initialize-multiaccounts]}
-  [{:keys [db all-multiaccounts]}]
-  (let [multiaccounts (->> all-multiaccounts
-                           (map (fn [{:keys [address] :as multiaccount}]
-                                  [address multiaccount]))
-                           (into {}))]
+  [{:keys [db]} all-multiaccounts]
+  (let [multiaccounts (reduce (fn [acc {:keys [address] :as multiaccount}]
+                                (assoc acc address multiaccount))
+                              {}
+                              all-multiaccounts)]
     {:db (assoc db :multiaccounts/multiaccounts multiaccounts)}))
 
 (fx/defn start-app [cofx]
@@ -88,13 +85,14 @@
 
 (fx/defn initialize-app-db
   "Initialize db to initial state"
-  [{{:keys      [view-id hardwallet
+  [{{:keys      [view-id hardwallet :multiaccounts/multiaccounts
                  initial-props desktop/desktop
                  network-status network peers-count peers-summary device-UUID
                  supported-biometric-auth push-notifications/stored network/type]
      :node/keys [status]
      :or        {network (get app-db :network)}} :db}]
   {:db (assoc app-db
+              :multiaccounts/multiaccounts multiaccounts
               :contacts/contacts {}
               :initial-props initial-props
               :desktop/desktop (merge desktop (:desktop/desktop app-db))
@@ -158,9 +156,10 @@
             {:keys [address public-key photo-path name accounts]} (first (selection-fn (vals multiaccounts)))]
         (multiaccounts.login/open-login cofx address photo-path name public-key accounts)))))
 
-(fx/defn initialize-multiaccount-db [{:keys [db web3]} address]
+(fx/defn initialize-multiaccount-db
+  [{:keys [db web3]} address]
   (let [{:universal-links/keys [url]
-         :keys                 [multiaccounts/multiaccounts multiaccounts/create networks/networks network
+         :keys                 [multiaccounts/multiaccounts networks/networks network
                                 network-status peers-count peers-summary view-id navigation-stack
                                 mailserver/mailservers
                                 intro-wizard
@@ -176,7 +175,6 @@
                         :navigation-stack navigation-stack
                         :node/status status
                         :intro-wizard intro-wizard
-                        :multiaccounts/create create
                         :desktop/desktop (merge desktop (:desktop/desktop app-db))
                         :networks/networks networks
                         :multiaccount current-multiaccount
@@ -195,9 +193,7 @@
                         :supported-biometric-auth supported-biometric-auth
                         :semaphores semaphores
                         :hardwallet hardwallet
-                        :web3 web3)
-           (= view-id :create-multiaccount)
-           (assoc-in [:multiaccounts/create :step] :enter-name))}))
+                        :web3 web3))}))
 
 (defn login-only-events [{:keys [db] :as cofx} address stored-pns]
   (fx/merge cofx
@@ -227,7 +223,8 @@
 (defn- keycard-setup? [cofx]
   (boolean (get-in cofx [:db :hardwallet :flow])))
 
-(fx/defn initialize-multiaccount [{:keys [db] :as cofx} address]
+(fx/defn initialize-multiaccount
+  [{:keys [db] :as cofx} address]
   (let [stored-pns (:push-notifications/stored db)]
     (fx/merge cofx
               {:notifications/get-fcm-token nil}
@@ -237,7 +234,6 @@
                  (models.dev-server/start))
               (extensions.module/initialize)
               (stickers/init-stickers-packs)
-              (multiaccounts.update/update-sign-in-time)
               #(when-not (or (creating-multiaccount? %)
                              (keycard-setup? %))
                  (login-only-events % address stored-pns)))))

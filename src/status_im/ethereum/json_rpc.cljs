@@ -42,7 +42,10 @@
    "browsers_deleteBrowser" {}
    "permissions_addDappPermissions" {}
    "permissions_getDappPermissions" {}
-   "permissions_deleteDappPermissions" {}})
+   "permissions_deleteDappPermissions" {}
+   "settings_saveConfig" {}
+   "settings_getConfig" {}
+   "settings_saveNodeConfig" {}})
 
 (defn call
   [{:keys [method params on-success on-error]}]

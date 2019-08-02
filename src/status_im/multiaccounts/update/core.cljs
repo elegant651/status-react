@@ -73,10 +73,6 @@
                         :mnemonic        nil}
                        {}))
 
-(fx/defn update-sign-in-time
-  [{db :db now :now :as cofx}]
-  (multiaccount-update cofx {:last-sign-in now} {}))
-
 (fx/defn update-settings
   [{{:keys [multiaccount] :as db} :db :as cofx} settings {:keys [success-event]}]
   (let [new-multiaccount (assoc multiaccount :settings settings)]

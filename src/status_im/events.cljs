@@ -265,23 +265,6 @@
    (multiaccounts/confirm-wallet-set-up cofx)))
 
 ;; multiaccounts create module
-
-(handlers/register-handler-fx
- :multiaccounts.create.ui/next-step-pressed
- [(re-frame/inject-cofx :random-guid-generator)]
- (fn [cofx [_ step password password-confirm]]
-   (multiaccounts.create/next-step cofx step password password-confirm)))
-
-(handlers/register-handler-fx
- :multiaccounts.create.ui/step-back-pressed
- (fn [cofx [_ step password password-confirm]]
-   (multiaccounts.create/step-back cofx step)))
-
-(handlers/register-handler-fx
- :multiaccounts.create.ui/input-text-changed
- (fn [cofx [_ input-key text]]
-   (multiaccounts.create/multiaccount-set-input-text cofx input-key text)))
-
 (defn get-selected-multiaccount [{:keys [db]}]
   (let [{:keys [selected-id multiaccounts]} (:intro-wizard db)]
     (some #(when (= selected-id (:id %)) %) multiaccounts)))
@@ -379,7 +362,9 @@
 (handlers/register-handler-fx
  :multiaccounts.logout/filters-removed
  (fn [cofx]
-   (init/initialize-app-db cofx)))
+   (fx/merge cofx
+             init/initialize-app-db
+             init/initialize-views)))
 
 ;; multiaccounts update module
 
