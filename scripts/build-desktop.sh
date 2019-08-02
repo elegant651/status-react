@@ -27,6 +27,7 @@ external_modules_dir=( \
   'node_modules/google-breakpad' \
   'modules/react-native-desktop-linking/desktop' \
   'modules/react-native-desktop-menu/desktop' \
+  'modules/react-native-desktop-gesture-handler' \
   'modules/react-native-desktop-config/desktop' \
   'modules/react-native-desktop-shortcuts/desktop' \
   'modules/react-native-desktop-notification/desktop' \
@@ -354,7 +355,7 @@ if is_macos; then
     local exeDir="$contentsDir/MacOS"
 
     [ $VERBOSE_LEVEL -ge 1 ] && echo "Checking rpaths in ${dylib}"
-  
+
     # Walk through the dependencies of $dylib
     local dependencies=$(otool -L "$dylib" | grep -E "\s+/nix/" | sed "s|@executable_path|$exeDir|" | awk -F "(" '{print $1}' | xargs)
     local moduleDirPath=$(dirname $dylib)

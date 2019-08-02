@@ -469,5 +469,5 @@
 
 (defview select-chat []
   [react/view {:style {:align-items :center :justify-content :center :flex 1}}
-   [react/text {:style style/decline-chat}
+   [react/text {:style style/select-chat}
     (i18n/label :t/select-chat)]])

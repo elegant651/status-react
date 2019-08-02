@@ -7002,9 +7002,9 @@ react-native-udp@2.2.1:
     invariant "2.2.0"
     keymirror "0.1.1"
 
-"react-native@git+https://github.com/status-im/react-native-desktop.git#feature/gesture-handler":
+"react-native@git+https://github.com/status-im/react-native-desktop.git#master":
   version "0.57.8"
-  resolved "git+https://github.com/status-im/react-native-desktop.git#c004e6399070877929e23a1c78dc4e06759cb8a5"
+  resolved "git+https://github.com/status-im/react-native-desktop.git#cad20cb8c42d07473e1bbb7caf8888334d115775"
   dependencies:
     "@babel/runtime" "^7.0.0"
     absolute-path "^0.0.0"

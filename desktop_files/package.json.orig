@@ -20,6 +20,7 @@
     "modules/react-native-desktop-config/desktop",
     "modules/react-native-desktop-shortcuts/desktop",
     "modules/react-native-desktop-notification/desktop",
+    "modules/react-native-desktop-gesture-handler/desktop",
     "node_modules/google-breakpad"
   ],
   "desktopFonts": [
@@ -68,7 +69,7 @@
     "querystring-es3": "0.2.1",
     "react": "16.6.1",
     "react-dom": "16.4.2",
-    "react-native": "git+https://github.com/status-im/react-native-desktop.git#feature/gesture-handler",
+    "react-native": "git+https://github.com/status-im/react-native-desktop.git#master",
     "react-native-background-timer": "2.0.0",
     "react-native-camera": "0.10.0",
     "react-native-config": "git+https://github.com/status-im/react-native-config.git#v0.11.2-status",
